@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: wabit/bin-collection-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30000
+
+env:
+  NODE_ENV: production
+
+resources: {}

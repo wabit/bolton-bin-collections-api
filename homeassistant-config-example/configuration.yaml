@@ -1,7 +1,7 @@
 sensor:
   - platform: rest
      name: Bin Collection
-      resource: http://your-node-server-ip:your-node-server-port/bin-collection?postcode=bl2+4ds&address=100010920644
+      resource: http://your-node-server-ip:your-node-server-port/bin-collection?postcode=######&address=###########
       json_attributes:
         - green
         - grey

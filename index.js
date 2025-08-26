@@ -44,6 +44,13 @@ function callService(postcode, address, callback) {
   const req = https.request(options, (res) => {
     let data = '';
 
+    if (res.statusCode < 200 || res.statusCode >= 300 ) {
+      console.error(`Request failed with status code: ${res.statusMessage}`);
+      callback({ error: `Request failed with status code: ${res.statusCode}` });
+      res.resume();
+      return;
+    }
+
     res.on('data', (chunk) => {
       data += chunk;
     });
@@ -78,12 +85,17 @@ function callService(postcode, address, callback) {
         }
       });
 
+      req.on('error', (e) => {
+        callback({ error: `${e.message}` });
+      });
+
       callback(binInfo);
     });
   });
 
   req.on('error', (e) => {
     console.error(`Problem with request: ${e.message}`);
+    callback({ error: `Problem with request: ${e.message}` });
   });
 
   req.write(postData);
@@ -91,15 +103,36 @@ function callService(postcode, address, callback) {
 }
 
 const server = http.createServer((req, res) => {
-  // Use WHATWG URL API for parsing
   const reqUrl = new URL(req.url, `http://${req.headers.host}`);
   const postcode = reqUrl.searchParams.get('postcode');
   const address = reqUrl.searchParams.get('address');
 
+  // log request endpoint
+  console.log(`Request received: ${req.method} ${req.url}`);
+
+  // health check endpoint
+  if (reqUrl.pathname === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok' }));
+    return;
+  }
+
   if (reqUrl.pathname.startsWith('/bin-collection') && req.method === 'GET' && postcode && address) {
     callService(postcode, address, (binInfo) => {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ state: 'ok', ...binInfo }));
+      console.log("info: ", binInfo);
+      if (binInfo.error) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ state: 'error', message: binInfo.error }));
+        return;
+      } else if
+      (Object.keys(binInfo).length === 0) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end(JSON.stringify({ state: 'error', message: 'No bin information found' }));
+        return;
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ state: 'ok', ...binInfo }));
+      }
     });
   } else {
     res.writeHead(400, { 'Content-Type': 'text/plain' });

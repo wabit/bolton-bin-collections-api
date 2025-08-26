@@ -1,0 +1,55 @@
+type: entities
+entities:
+  - entity: sensor.grey_bin_collection_date
+    type: custom:template-entity-row
+    name: Grey Bin
+    icon: |-
+      {% if is_state('sensor.grey_bin_collection_date', 'Today') %}
+        mdi:trash-can
+      {% else %}
+        mdi:trash-can-outline
+      {% endif %}
+    color: |-
+      {% if is_state('sensor.grey_bin_collection_date', 'Today') %}
+        Grey
+      {% endif %}
+  - entity: sensor.beige_bin_collection_date
+    name: Beige Bin
+    type: custom:template-entity-row
+    icon: |-
+      {% if is_state('sensor.beige_bin_collection_date', 'Today') %}
+        mdi:trash-can
+      {% else %}
+        mdi:trash-can-outline
+      {% endif %}
+    color: |-
+      {% if is_state('sensor.beige_bin_collection_date', 'Today') %}
+        burlywood
+      {% endif %}
+  - entity: sensor.burgundy_bin_collection_date
+    name: Burgundy Bin
+    type: custom:template-entity-row
+    icon: |-
+      {% if is_state('sensor.burgundy_bin_collection_date', 'Today') %}
+        mdi:trash-can
+      {% else %}
+        mdi:trash-can-outline
+      {% endif %}
+    color: |-
+      {% if is_state('sensor.burgundy_bin_collection_date', 'Today') %}
+        maroon
+      {% endif %}
+  - entity: sensor.green_bin_collection_date
+    name: Green Bin
+    type: custom:template-entity-row
+    icon: |-
+      {% if is_state('sensor.green_bin_collection_date', 'Today') %}
+        mdi:trash-can
+      {% else %}
+        mdi:trash-can-outline
+      {% endif %}
+    color: |-
+      {% if is_state('sensor.green_bin_collection_date', 'Today') %}
+        darkgreen
+      {% endif %}
+title: Bin Collections

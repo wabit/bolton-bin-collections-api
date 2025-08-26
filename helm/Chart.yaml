@@ -1,0 +1,5 @@
+apiVersion: v2
+name: bin-collection-service
+description: A Helm chart for bin-collection-service
+version: 0.1.0
+appVersion: "latest"
