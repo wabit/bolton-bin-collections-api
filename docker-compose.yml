@@ -1,0 +1,10 @@
+services:
+  bin-collection-service:
+    image: wabit/bin-collection-service:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production

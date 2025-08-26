@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "date-fns": "^4.1.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "build-docker": "docker buildx build --platform linux/amd64,linux/arm64 -t wabit/bin-collection-service:latest --push ."
+  },
+  "devDependencies": {
+    "jest": "^30.0.5",
+    "supertest": "^7.1.4"
+  }
+}

@@ -1,0 +1,34 @@
+sensor:
+  - platform: rest
+     name: Bin Collection
+      resource: http://your-node-server-ip:your-node-server-port/bin-collection?postcode=bl2+4ds&address=100010920644
+      json_attributes:
+        - green
+        - grey
+        - beige
+        - burgundy
+      value_template: "{{ value_json.state }}"
+      scan_interval: 43200
+
+template:
+  - sensor:
+      - name: "Green Bin Collection Date"
+        state: "{{ state_attr('sensor.bin_collection', 'green')['relative_time'] }}"
+        attributes:
+          image: "{{ state_attr('sensor.bin_collection', 'green')['image'] }}"
+          date: "{{ state_attr('sensor.bin_collection', 'green')['date'] }}"
+      - name: "Grey Bin Collection Date"
+        state: "{{ state_attr('sensor.bin_collection', 'grey')['relative_time'] }}"
+        attributes:
+          image: "{{ state_attr('sensor.bin_collection', 'grey')['image'] }}"
+          date: "{{ state_attr('sensor.bin_collection', 'grey')['date'] }}"
+      - name: "Beige Bin Collection Date"
+        state: "{{ state_attr('sensor.bin_collection', 'beige')['relative_time'] }}"
+        attributes:
+          image: "{{ state_attr('sensor.bin_collection', 'beige')['image'] }}"
+          date: "{{ state_attr('sensor.bin_collection', 'beige')['date'] }}"
+      - name: "Burgundy Bin Collection Date"
+        state: "{{ state_attr('sensor.bin_collection', 'burgundy')['relative_time'] }}"
+        attributes:
+          image: "{{ state_attr('sensor.bin_collection', 'burgundy')['image'] }}"
+          date: "{{ state_attr('sensor.bin_collection', 'burgundy')['date'] }}"
