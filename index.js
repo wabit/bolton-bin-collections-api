@@ -3,7 +3,7 @@ const querystring = require('querystring');
 const cheerio = require('cheerio');
 const { parse, format, differenceInDays, isValid } = require('date-fns');
 const http = require('http');
-const url = require('url');
+const { URL } = require('url'); // Update: import WHATWG URL API
 
 function callService(postcode, address, callback) {
   const postData = querystring.stringify({
@@ -91,11 +91,12 @@ function callService(postcode, address, callback) {
 }
 
 const server = http.createServer((req, res) => {
-  const queryObject = url.parse(req.url, true).query;
-  const postcode = queryObject.postcode;
-  const address = queryObject.address;
+  // Use WHATWG URL API for parsing
+  const reqUrl = new URL(req.url, `http://${req.headers.host}`);
+  const postcode = reqUrl.searchParams.get('postcode');
+  const address = reqUrl.searchParams.get('address');
 
-  if (req.url.startsWith('/bin-collection') && req.method === 'GET' && postcode && address) {
+  if (reqUrl.pathname.startsWith('/bin-collection') && req.method === 'GET' && postcode && address) {
     callService(postcode, address, (binInfo) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ state: 'ok', ...binInfo }));
