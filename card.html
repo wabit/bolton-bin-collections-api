@@ -1,7 +1,0 @@
-<div class="relative h-48 bg-sky-300 rounded-3xl text-black">
-  <img src="https://images.unsplash.com/photo-1612838320000-3b3b3b3b3b3b" class="object-cover w-full h-full rounded-3xl" alt="Sunrise">
-  <div class="absolute right-10 top-2/4 -translate-y-2/4 text-black font-bold">
-    The sun is {{ states('sun.sun') }}
-    <div class="text-slate-700 font-medium">Rising: {{ 'yes' if state_attr('sun.sun', 'rising') else 'no'}} </div>
-  </div>
-</div>
