@@ -165,11 +165,11 @@ function callService(uprn, callback) {
               
               if (strongText.includes('grey')) {
                 binType = 'grey';
-              } else if (strongText.includes('recycling')) {
-                binType = 'recycling';
-              } else if (strongText.includes('plastic')) {
-                binType = 'plastic';
-              } else if (strongText.includes('garden')) {
+              } else if (strongText.includes('recycling') || strongText.includes('beige')) {
+                binType = 'beige';
+              } else if (strongText.includes('plastic') || strongText.includes('burgundy')) {
+                binType = 'burgundy';
+              } else if (strongText.includes('garden') || strongText.includes('green')) {
                 binType = 'green';
               }
               
