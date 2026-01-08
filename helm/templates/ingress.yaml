@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "bin-collection-service.fullname" . }}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: bin-collection.lab.wabit.net.
+    # traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+    - host: bin-collection.local   # Change this to your desired domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "bin-collection-service.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}

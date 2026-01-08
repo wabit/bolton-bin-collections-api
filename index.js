@@ -1,114 +1,220 @@
 const https = require('https');
-const querystring = require('querystring');
 const cheerio = require('cheerio');
-const { parse, format, differenceInDays, isValid } = require('date-fns');
+const { parse, format, differenceInDays, isValid, addDays } = require('date-fns');
 const http = require('http');
-const { URL } = require('url'); // Update: import WHATWG URL API
+const { URL } = require('url');
 
-function callService(postcode, address, callback) {
-  const postData = querystring.stringify({
-    '__EVENTTARGET': 'ddlAddresses',
-    '__EVENTARGUMENT': '',
-    '__LASTFOCUS': '',
-    '__VIEWSTATE': '/wEPDwULLTE3NjkxMDI1MjYPZBYCAgEPZBYCAgMPDxYCHgdWaXNpYmxlZ2QWAgIDDxAPFgYeDURhdGFUZXh0RmllbGQFC0Z1bGxBZGRyZXNzHg5EYXRhVmFsdWVGaWVsZAUEVVBSTh4LXyFEYXRhQm91bmRnZBAVEwMtLS0SMSBSSURJTkcgR0FURSBNRVdTEzExIFJJRElORyBHQVRFIE1FV1MTMTMgUklESU5HIEdBVEUgTUVXUxMxNSBSSURJTkcgR0FURSBNRVdTEzE3IFJJRElORyBHQVRFIE1FV1MTMTkgUklESU5HIEdBVEUgTUVXUxMyMSBSSURJTkcgR0FURSBNRVdTEzIzIFJJRElORyBHQVRFIE1FV1MTMjUgUklESU5HIEdBVEUgTUVXUxMyNyBSSURJTkcgR0FURSBNRVdTEzI5IFJJRElORyBHQVRFIE1FV1MSMyBSSURJTkcgR0FURSBNRVdTEzMxIFJJRElORyBHQVRFIE1FV1MTMzMgUklESU5HIEdBVEUgTUVXUxMzNSBSSURJTkcgR0FURSBNRVdTEjUgUklESU5HIEdBVEUgTUVXUxI3IFJJRElORyBHQVRFIE1FV1MSOSBSSURJTkcgR0FURSBNRVdTFRMDLS0tDDEwMDAxMDkyMDYzMwwxMDAwMTA5MjA2MzgMMTAwMDEwOTIwNjM5DDEwMDAxMDkyMDY0MAwxMDAwMTA5MjA2NDEMMTAwMDEwOTIwNjQyDDEwMDAxMDkyMDY0MwwxMDAwMTA5MjA2NDQMMTAwMDEwOTIwNjQ1DDEwMDAxMDkyMDY0NgwxMDAwMTA5MjA2NDcMMTAwMDEwOTIwNjM0DDEwMDAxMDkyMDY0OAwxMDAwMTA5MjA2NDkMMTAwMDEwOTIwNjUwDDEwMDAxMDkyMDYzNQwxMDAwMTA5MjA2MzYMMTAwMDEwOTIwNjM3FCsDE2dnZ2dnZ2dnZ2dnZ2dnZ2dnZ2cWAWZkZL90xmX0yZMDJ5v4vZ/sXkoCn1BT',
-    '__VIEWSTATEGENERATOR': 'EABFF864',
-    '__EVENTVALIDATION': '/wEdABcCTwXgkVTVf1q+OrGaQKHw7fSJevDr2c91EoBbDh5wZTzmltaUM7aEAN+g9cP/m123aOWQ6je/vrGB2nEag2McSb0vJwwu9VS/UyNmRlDwuZkSMC9w6QfWdyWd8Vo8KJd9Y67UcSwcP+F/Ed+C2FusS26Vgssmzzokpj90v4rOZqIMBb0N3V04fEROm/vt9LvC5EoXV2eFMQVMnLjPPIcv+JmRnkCZpHwchBVdIuvviceA31bUBpR9IBOwcieh9dXZb9s3Dx/+N5SVIUYwmcIrrv0bgTAnXZeUybUkqjmWkscORtEkkuOef+l4guJiwvab5UiKFgtc3/Yz4k35qdO9TIjx+A0G8FBffgcHbRbQ14/Ydinnok4rflK1dPGWEwmghiDrw688dLVEV/bEczQZMFGpe5S7h9DQuhTo1dLoBxkgsk4nnhPumwPqXtT3cVnsOxGsGRxh5SWuo1R958Ws9VZaqV6Z6+bUo67ivVVYUx4xTo4e2eTsuAOofT3fZ2uwh8bh',
-    'txtPostcode': postcode,
-    'ddlAddresses': address
-  });
-
-  const options = {
-    hostname: 'web.bolton.gov.uk',
+// Step 1: Access /api/citizen to get a session
+// Step 2: Use that session's Authorization header for the API call
+function getAuthToken(callback) {
+  // First call /api/citizen to establish a session on the form domain
+  const citizenOptions = {
+    hostname: 'bolton.form.uk.empro.verintcloudservices.com',
     port: 443,
-    path: '/bins.aspx',
-    method: 'POST',
+    path: '/api/citizen?archived=Y&preview=false&locale=en',
+    method: 'GET',
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:129.0) Gecko/20100101 Firefox/129.0',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8',
-      'Accept-Language': 'en-GB,en;q=0.5',
-      'Accept-Encoding': 'gzip, deflate, br, zstd',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Origin': 'https://web.bolton.gov.uk',
-      'Connection': 'keep-alive',
-      'Referer': 'https://web.bolton.gov.uk/bins.aspx',
-      'Upgrade-Insecure-Requests': '1',
-      'Sec-Fetch-Dest': 'iframe',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-User': '?1',
-      'Priority': 'u=4',
-      'Content-Length': Buffer.byteLength(postData)
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+      'Origin': 'https://bolton.portal.uk.empro.verintcloudservices.com',
+      'Referer': 'https://bolton.portal.uk.empro.verintcloudservices.com/',
+      'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8'
     }
   };
-
-  const req = https.request(options, (res) => {
+  
+  const req = https.request(citizenOptions, (res) => {
     let data = '';
+    const authHeader = res.headers['authorization'];
+    
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      if (!authHeader) {
+        callback(new Error('No Authorization header from /api/citizen'));
+        return;
+      }
+      
+      // Now get CSRF token from portal
+      const portalOptions = {
+        hostname: 'bolton.portal.uk.empro.verintcloudservices.com',
+        port: 443,
+        path: '/site/empro-bolton/request/es_bin_collection_dates',
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8',
+          'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8'
+        }
+      };
+      
+      const portalReq = https.request(portalOptions, (portalRes) => {
+        let portalData = '';
+        portalRes.on('data', (chunk) => { portalData += chunk; });
+        portalRes.on('end', () => {
+          try {
+            const match = portalData.match(/<meta name="_csrf_token" content="([^"]+)"/);
+            if (!match || !match[1]) {
+              callback(new Error('Could not extract CSRF token from portal'));
+              return;
+            }
+            
+            const csrfToken = match[1];
+            callback(null, { csrfToken, authHeader });
+          } catch (e) {
+            callback(e);
+          }
+        });
+      });
+      
+      portalReq.on('error', callback);
+      portalReq.end();
+    });
+  });
+  
+  req.on('error', callback);
+  req.end();
+}
 
-    if (res.statusCode < 200 || res.statusCode >= 300 ) {
-      console.error(`Request failed with status code: ${res.statusMessage}`);
-      callback({ error: `Request failed with status code: ${res.statusCode}` });
-      res.resume();
+function callService(uprn, callback) {
+  // Get CSRF token from portal
+  getAuthToken((err, auth) => {
+    if (err) {
+      callback({ error: `Failed to get auth token: ${err.message}` });
       return;
     }
 
-    res.on('data', (chunk) => {
-      data += chunk;
+    const csrfToken = auth.csrfToken;
+    const authHeader = auth.authHeader;
+
+    // Calculate date range for the API (current date + 8 weeks)
+    const today = new Date();
+    const startDate = format(today, 'dd/MM/yyyy');
+    const endDate = format(addDays(today, 56), 'dd/MM/yyyy');
+
+    const postData = JSON.stringify({
+      name: 'es_bin_collection_dates',
+      data: {
+        uprn: uprn,
+        start_date: startDate,
+        end_date: endDate
+      },
+      email: '',
+      caseid: '',
+      xref: '',
+      xref1: '',
+      xref2: ''
     });
 
-    res.on('end', () => {
-      const $ = cheerio.load(data);
-      const binInfo = {};
+    const options = {
+      hostname: 'bolton.form.uk.empro.verintcloudservices.com',
+      port: 443,
+      path: '/api/custom?action=es_get_bin_collection_dates&actionedby=uprn_changed&loadform=true&access=citizen&locale=en',
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        'X-CSRF-TOKEN': csrfToken,
+        'Authorization': authHeader,
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/json',
+        'Origin': 'https://bolton.portal.uk.empro.verintcloudservices.com',
+        'Referer': 'https://bolton.portal.uk.empro.verintcloudservices.com/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
 
-      $('.bin-info').each((i, elem) => {
-        const binType = $(elem).find('strong').text().trim().split(' ')[2].toLowerCase();
-        const nextDate = $(elem).find('.date-list .date span').first().text().trim();
-        const imageUrl = $(elem).find('img').attr('src');
-        if (nextDate) {
-          const parsedDate = parse(nextDate, 'EEEE dd MMMM yyyy', new Date());
-          if (isValid(parsedDate)) {
-            const formattedDate = format(parsedDate, 'dd/MM/yyyy');
-            const relativeTime = differenceInDays(parsedDate, new Date());
-            let relativeTimeText;
-            if (relativeTime === 0) {
-              relativeTimeText = 'Today';
-            } else if (relativeTime === 1) {
-              relativeTimeText = 'Tomorrow';
-            } else {
-              relativeTimeText = `in ${relativeTime} days`;
-            }
-            binInfo[binType] = {
-              date: formattedDate,
-              image: imageUrl,
-              relative_time: relativeTimeText
-            };
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          callback({ error: `Request failed with status code: ${res.statusCode}` });
+          return;
+        }
+        
+        try {
+          const jsonResponse = JSON.parse(data);
+          const htmlContent = jsonResponse.data?.collection_dates;
+          
+          if (!htmlContent) {
+            callback({ error: 'No collection data found in response' });
+            return;
           }
+
+          const $ = cheerio.load(htmlContent);
+          const binInfo = { state: 'ok' };
+
+          // Parse each bin type section
+          $('div[style*="overflow:auto"]').each((i, elem) => {
+            const strongText = $(elem).find('strong').text().trim();
+            let imageUrl = $(elem).find('img').attr('src');
+            // Clean up image URL - remove excess whitespace
+            if (imageUrl) {
+              imageUrl = imageUrl.replace(/\s+/g, '');
+            }
+            
+            // Get the first date from the list
+            const firstDate = $(elem).find('li').first().text().trim();
+            
+            if (strongText && firstDate) {
+              let binType = '';
+              
+              if (strongText.includes('grey')) {
+                binType = 'grey';
+              } else if (strongText.includes('recycling')) {
+                binType = 'recycling';
+              } else if (strongText.includes('plastic')) {
+                binType = 'plastic';
+              } else if (strongText.includes('garden')) {
+                binType = 'green';
+              }
+              
+              if (binType) {
+                // Extract date (format: "Wednesday 14 January 2026")
+                const dateMatch = firstDate.match(/\d{1,2}\s+\w+\s+\d{4}/);
+                if (dateMatch) {
+                  const formattedDate = format(parse(dateMatch[0], 'dd MMMM yyyy', new Date()), 'dd/MM/yyyy');
+                  const relativeDays = Math.floor((parse(dateMatch[0], 'dd MMMM yyyy', new Date()) - new Date()) / (1000 * 60 * 60 * 24));
+                  let relativeTime;
+                  
+                  if (relativeDays === 0) relativeTime = 'today';
+                  else if (relativeDays === 1) relativeTime = 'tomorrow';
+                  else if (relativeDays < 0) relativeTime = `${Math.abs(relativeDays)} days ago`;
+                  else relativeTime = `in ${relativeDays} days`;
+                  
+                  binInfo[binType] = {
+                    date: formattedDate,
+                    image: imageUrl,
+                    relative_time: relativeTime
+                  };
+                }
+              }
+            }
+          });
+          
+          callback(null, binInfo);
+        } catch (e) {
+          callback({ error: `Error parsing response: ${e.message}` });
         }
       });
-
-      req.on('error', (e) => {
-        callback({ error: `${e.message}` });
-      });
-
-      callback(binInfo);
     });
-  });
 
-  req.on('error', (e) => {
-    console.error(`Problem with request: ${e.message}`);
-    callback({ error: `Problem with request: ${e.message}` });
-  });
+    req.on('error', (e) => {
+      callback({ error: `Problem with request: ${e.message}` });
+    });
 
-  req.write(postData);
-  req.end();
+    req.write(postData);
+    req.end();
+  });
 }
 
 const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host}`);
-  const postcode = reqUrl.searchParams.get('postcode');
-  const address = reqUrl.searchParams.get('address');
-
-  // log request endpoint
-  console.log(`Request received: ${req.method} ${req.url}`);
+  const uprn = reqUrl.searchParams.get('uprn');
 
   // health check endpoint
   if (reqUrl.pathname === '/health' && req.method === 'GET') {
@@ -117,16 +223,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (reqUrl.pathname.startsWith('/bin-collection') && req.method === 'GET' && postcode && address) {
-    callService(postcode, address, (binInfo) => {
-      console.log("info: ", binInfo);
-      if (binInfo.error) {
+  if (reqUrl.pathname.startsWith('/bin-collection') && req.method === 'GET' && uprn) {
+    callService(uprn, (err, binInfo) => {
+      if (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ state: 'error', message: err.message || err }));
+        return;
+      } else if (binInfo && binInfo.error) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ state: 'error', message: binInfo.error }));
         return;
-      } else if
-      (Object.keys(binInfo).length === 0) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
+      } else if (!binInfo || Object.keys(binInfo).length === 0) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ state: 'error', message: 'No bin information found' }));
         return;
       } else {
@@ -136,7 +244,7 @@ const server = http.createServer((req, res) => {
     });
   } else {
     res.writeHead(400, { 'Content-Type': 'text/plain' });
-    res.end('Bad Request: Missing postcode or address');
+    res.end('Bad Request: Missing uprn parameter');
   }
 });
 

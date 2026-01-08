@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "jest",
+    "start": "node index.js",
     "build-docker": "docker buildx build --platform linux/amd64,linux/arm64 -t wabit/bin-collection-service:latest --push ."
   },
   "devDependencies": {
